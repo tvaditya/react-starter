@@ -1,62 +1,76 @@
-import React from 'react';
+import React, { useState, FormEvent } from 'react';
 import { FiChevronRight } from 'react-icons/fi';
+import api from '../../services/api';
 
 import logoImg from '../../assets/logo.svg';
 
-import { Title, Form, Repositories } from './styles';
+import { Title, Form, Repositories, Error } from './styles';
+
+interface Repository {
+    full_name: string;
+    description: string;
+    owner: {
+        login: string;
+        avatar_url: string;
+    }
+}
 
 const Dashboard: React.FunctionComponent = () => {
+    const [newRepo, setNewRepo] = useState('');
+    const [inputError, setInputError] = useState('');
+    const [repositories, setRepositories] =  useState<Repository[]>([]);
+
+    async function handleAddRepository(event: FormEvent<HTMLFormElement>): Promise<void> {
+
+        if (!newRepo) {
+            setInputError('Type in author/title of the Github Repository.');
+            return;
+        }
+
+        try {
+            event.preventDefault();
+
+            const response = await api.get(`repos/${newRepo}`);
+    
+            const repository = response.data;
+    
+            setRepositories([ ...repositories, repository]);
+            setNewRepo('');
+            setInputError('');
+        } catch (err) {
+            setInputError('Error: Unable to localize repository');
+        }
+
+   }
+   
     return(
         <>
             <img src={logoImg} alt="Github Explorer"/>
             <Title>Explore Github Repositories</Title>
 
-            <Form>
-                <input type="text" placeholder="Type here!"></input>
+            <Form onSubmit={handleAddRepository}>
+                <input 
+                    value = {newRepo}
+                    onChange={(e) => setNewRepo(e.target.value)} 
+                    placeholder="Type here!"></input>
                 <button type="submit">Search</button>
             </Form>
 
+            { inputError && <Error>{inputError}</Error>}
+
             <Repositories>
-                <a href="teste">
-                   <img
-                    src="https://avatars0.githubusercontent.com/u/7970625?s=460&u=834888d96594cc08405b143d618a31073070a187&v=4"
-                    alt="Tantravahi Aditya"></img>
-                    <div>
-                        <strong>tvaditya/react</strong>
-                        <p>Easy ReactJS for all</p>    
-                    </div>
-                    <FiChevronRight size={20}/> 
-                </a>
-                <a href="teste">
-                   <img
-                    src="https://avatars0.githubusercontent.com/u/7970625?s=460&u=834888d96594cc08405b143d618a31073070a187&v=4"
-                    alt="Tantravahi Aditya"></img>
-                    <div>
-                        <strong>tvaditya/react</strong>
-                        <p>Easy ReactJS for all</p>    
-                    </div>
-                    <FiChevronRight size={20}/> 
-                </a> 
-                <a href="teste">
-                   <img
-                    src="https://avatars0.githubusercontent.com/u/7970625?s=460&u=834888d96594cc08405b143d618a31073070a187&v=4"
-                    alt="Tantravahi Aditya"></img>
-                    <div>
-                        <strong>tvaditya/react</strong>
-                        <p>Easy ReactJS for all</p>    
-                    </div>
-                    <FiChevronRight size={20}/> 
-                </a> 
-                <a href="teste">
-                   <img
-                    src="https://avatars0.githubusercontent.com/u/7970625?s=460&u=834888d96594cc08405b143d618a31073070a187&v=4"
-                    alt="Tantravahi Aditya"></img>
-                    <div>
-                        <strong>tvaditya/react</strong>
-                        <p>Easy ReactJS for all</p>    
-                    </div>
-                    <FiChevronRight size={20}/> 
-                </a>   
+                {repositories.map(repository => (
+                    <a key={repository.full_name} href="teste">
+                    <img
+                        src={repository.owner.avatar_url}
+                        alt={repository.owner.login}></img>
+                        <div>
+                            <strong>{repository.full_name}</strong>
+                            <p>{repository.description}</p>    
+                        </div>
+                        <FiChevronRight size={20}/> 
+             </a>
+                ))}
             </Repositories>
         </>
     );
